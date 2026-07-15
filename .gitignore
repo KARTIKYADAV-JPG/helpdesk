@@ -1,0 +1,55 @@
+# Laravel .gitignore
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# Laravel generated files
+/bootstrap/cache/
+/public/hot
+/public/storage
+/storage/*.key
+/storage/app/
+/storage/framework/
+/storage/logs/
+
+# Environment & secrets
+.env
+.env.backup
+.env.production
+.env.local
+.env.*.local
+
+# Database
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+/database/*.sqlite
+
+# Compiled assets / Build output
+/public/build/
+/public/css/app.css
+/public/js/app.js
+npm-debug.log
+yarn-error.log
+
+# Testing
+/.phpunit.result.cache
+/coverage/
+.phpunit.cache/
+
+# IDE & editor config
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Composer
+composer.phar
