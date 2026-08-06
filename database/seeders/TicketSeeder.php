@@ -197,6 +197,16 @@ class TicketSeeder extends Seeder
                     'subject' => 'Session timeout warning popup loop',
                     'description' => 'The session timeout warning modal keeps popping up repeatedly every 10 seconds, even while I am actively typing a response. I have to click continue constantly.'
                 ]
+            ],
+            TicketCategory::GENERAL_QUESTION->value => [
+                [
+                    'subject' => 'Inquiry regarding support SLAs and operating hours',
+                    'description' => 'What are your official support hours and expected response time SLAs for priority tickets during weekends and public holidays?'
+                ],
+                [
+                    'subject' => 'General product documentation and onboarding resources',
+                    'description' => 'Where can our team access video walkthroughs or user guides for onboarding new team members onto your platform?'
+                ]
             ]
         ];
 
@@ -207,7 +217,8 @@ class TicketSeeder extends Seeder
         // 3. Generate 100 tickets
         for ($i = 0; $i < 100; $i++) {
             $category = fake()->randomElement($categories);
-            $template = fake()->randomElement($templates[$category]);
+            $categoryTemplates = $templates[$category] ?? $templates[TicketCategory::TECHNICAL_SUPPORT->value];
+            $template = fake()->randomElement($categoryTemplates);
 
             Ticket::create([
                 'subject' => $template['subject'] . ' (' . fake()->numerify('Ref-####') . ')',
