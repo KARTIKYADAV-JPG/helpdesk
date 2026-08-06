@@ -79,19 +79,23 @@ class DashboardService
      */
     public function getAverageResolutionSeconds(): ?float
     {
-        $driver = DB::getDriverName();
+        $resolvedTickets = Ticket::whereNotNull('resolved_at')->get(['created_at', 'resolved_at']);
 
-        if ($driver === 'sqlite') {
-            $avgSeconds = Ticket::whereNotNull('resolved_at')
-                ->selectRaw("AVG(STRFTIME('%s', resolved_at) - STRFTIME('%s', created_at)) as avg_sec")
-                ->value('avg_sec');
-        } else {
-            $avgSeconds = Ticket::whereNotNull('resolved_at')
-                ->selectRaw('AVG(EXTRACT(EPOCH FROM (resolved_at - created_at))) as avg_sec')
-                ->value('avg_sec');
+        if ($resolvedTickets->isEmpty()) {
+            return null;
         }
 
-        return $avgSeconds !== null ? (float) $avgSeconds : null;
+        $totalSeconds = 0;
+        $count = 0;
+
+        foreach ($resolvedTickets as $ticket) {
+            if ($ticket->created_at && $ticket->resolved_at) {
+                $totalSeconds += abs($ticket->resolved_at->diffInSeconds($ticket->created_at));
+                $count++;
+            }
+        }
+
+        return $count > 0 ? (float) ($totalSeconds / $count) : null;
     }
 
     /**

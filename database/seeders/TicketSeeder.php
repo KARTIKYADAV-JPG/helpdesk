@@ -213,22 +213,42 @@ class TicketSeeder extends Seeder
         $statuses = TicketStatus::values();
         $priorities = TicketPriority::values();
         $categories = TicketCategory::values();
+        $aiAgent = User::where('email', 'ai@helpdesk.com')->first();
 
         // 3. Generate 100 tickets
         for ($i = 0; $i < 100; $i++) {
             $category = fake()->randomElement($categories);
             $categoryTemplates = $templates[$category] ?? $templates[TicketCategory::TECHNICAL_SUPPORT->value];
             $template = fake()->randomElement($categoryTemplates);
+            $status = fake()->randomElement($statuses);
+            $createdAt = fake()->dateTimeBetween('-6 months', '-1 day');
+
+            // Set resolved_at timestamp if ticket status is resolved or closed
+            $resolvedAt = null;
+            if ($status === 'resolved' || $status === 'closed') {
+                $resolvedAt = (clone $createdAt)->modify('+' . rand(15, 2880) . ' minutes');
+            }
+
+            // Assign tickets to human agents or AI Agent
+            $assignedTo = null;
+            if (fake()->boolean(80)) {
+                if ($aiAgent && ($status === 'resolved' || $status === 'closed') && fake()->boolean(40)) {
+                    $assignedTo = $aiAgent->id;
+                } else {
+                    $assignedTo = $agents->random()->id;
+                }
+            }
 
             Ticket::create([
                 'subject' => $template['subject'] . ' (' . fake()->numerify('Ref-####') . ')',
                 'description' => $template['description'] . "\n\nAdditional comments generated automatically by user environment.",
                 'category' => $category,
-                'status' => fake()->randomElement($statuses),
+                'status' => $status,
                 'priority' => fake()->randomElement($priorities),
                 'created_by' => $allUsers->random()->id,
-                'assigned_to' => fake()->boolean(70) ? $agents->random()->id : null,
-                'created_at' => fake()->dateTimeBetween('-6 months', 'now'),
+                'assigned_to' => $assignedTo,
+                'resolved_at' => $resolvedAt,
+                'created_at' => $createdAt,
             ]);
         }
     }
