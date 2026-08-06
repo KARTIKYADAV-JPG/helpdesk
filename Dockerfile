@@ -43,6 +43,10 @@ COPY . .
 # Copy compiled frontend assets from Node stage
 COPY --from=assets /app/public/build ./public/build
 
+# Ensure storage and cache directories exist and are writable before composer package discovery
+RUN mkdir -p bootstrap/cache storage/framework/cache storage/framework/sessions storage/framework/views database \
+    && chmod -R 777 bootstrap/cache storage database
+
 # Install PHP dependencies without dev packages
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
