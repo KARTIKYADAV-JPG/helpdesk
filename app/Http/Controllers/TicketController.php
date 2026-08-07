@@ -106,6 +106,12 @@ class TicketController extends Controller
             'assigned_to' => $validated['assignedToId'] ?? null,
         ], fn($val) => !is_null($val));
 
+        if (!empty($updateData['status']) && in_array($updateData['status'], [TicketStatus::RESOLVED->value, TicketStatus::CLOSED->value])) {
+            if (!$ticket->resolved_at) {
+                $updateData['resolved_at'] = now();
+            }
+        }
+
         if (!empty($updateData)) {
             $ticket->update($updateData);
         }

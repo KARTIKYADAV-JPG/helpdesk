@@ -48,17 +48,22 @@ class DashboardService
     }
 
     /**
-     * AI Resolved Tickets count (status: resolved AND assigned_to: AI agent ID).
+     * AI Resolved Tickets count (status: resolved/closed AND assigned to AI agent or containing AI summary/resolution).
      */
     public function getAiResolvedTickets(): int
     {
-        $aiAgent = User::where('email', 'ai@helpdesk.com')->first();
-        if (!$aiAgent) {
-            return 0;
-        }
+        $aiAgent = User::where('email', 'ai@helpdesk.com')->orWhere('name', 'AI')->first();
+        $aiAgentId = $aiAgent ? $aiAgent->id : null;
 
-        return Ticket::where('status', 'resolved')
-            ->where('assigned_to', $aiAgent->id)
+        return Ticket::whereIn('status', ['resolved', 'closed'])
+            ->where(function ($query) use ($aiAgentId) {
+                if ($aiAgentId) {
+                    $query->where('assigned_to', $aiAgentId)
+                          ->orWhereNotNull('summary');
+                } else {
+                    $query->whereNotNull('summary');
+                }
+            })
             ->count();
     }
 
@@ -75,11 +80,13 @@ class DashboardService
     }
 
     /**
-     * Calculate average resolution time between created_at and resolved_at.
+     * Calculate average resolution time between created_at and resolved_at (or updated_at fallback).
      */
     public function getAverageResolutionSeconds(): ?float
     {
-        $resolvedTickets = Ticket::whereNotNull('resolved_at')->get(['created_at', 'resolved_at']);
+        $resolvedTickets = Ticket::whereIn('status', ['resolved', 'closed'])
+            ->orWhereNotNull('resolved_at')
+            ->get(['created_at', 'resolved_at', 'updated_at']);
 
         if ($resolvedTickets->isEmpty()) {
             return null;
@@ -89,8 +96,10 @@ class DashboardService
         $count = 0;
 
         foreach ($resolvedTickets as $ticket) {
-            if ($ticket->created_at && $ticket->resolved_at) {
-                $totalSeconds += abs($ticket->resolved_at->diffInSeconds($ticket->created_at));
+            $endTime = $ticket->resolved_at ?? $ticket->updated_at;
+            if ($ticket->created_at && $endTime) {
+                $diff = abs($endTime->diffInSeconds($ticket->created_at));
+                $totalSeconds += $diff;
                 $count++;
             }
         }
