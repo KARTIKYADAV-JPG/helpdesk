@@ -37,7 +37,7 @@ class TicketController extends Controller
         $tickets = Ticket::with(['creator', 'assignedAgent'])
             ->filter($filters)
             ->sorted($sortField, $sortDirection)
-            ->simplePaginate(15)
+            ->simplePaginate(6)
             ->withQueryString();
 
         // Dropdown values loaded directly from Enums
@@ -256,6 +256,71 @@ Return ONLY the clean summary text without markdown headers or fluff.";
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while generating the AI summary.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Trigger Google Gemini AI Auto-Resolution on demand for a ticket.
+     */
+    public function autoResolve(Ticket $ticket): JsonResponse
+    {
+        Gate::authorize('view', $ticket);
+
+        try {
+            // Run the incoming ticket auto-resolution pipeline synchronously
+            $job = new \App\Jobs\ProcessIncomingTicketJob($ticket->id);
+            $job->handle();
+
+            $ticket->refresh()->load(['replies.user', 'assignedAgent']);
+            $isResolved = ($ticket->status->value === TicketStatus::RESOLVED->value);
+
+            return response()->json([
+                'success' => true,
+                'is_resolved' => $isResolved,
+                'status' => $ticket->status->value,
+                'status_label' => TicketStatus::labels()[$ticket->status->value] ?? ucfirst($ticket->status->value),
+                'category' => $ticket->category->value,
+                'category_label' => TicketCategory::labels()[$ticket->category->value] ?? ucfirst($ticket->category->value),
+                'message' => $isResolved
+                    ? 'Ticket was successfully auto-resolved by Google Gemini AI.'
+                    : 'Gemini AI evaluated the ticket against Knowledge Base. Ticket remains open for agent review.',
+            ]);
+        } catch (\Throwable $e) {
+            logger()->error('AI Auto-Resolution Exception: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process Gemini Auto-Resolution: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Trigger Google Gemini AI Classification for a ticket.
+     */
+    public function classify(Ticket $ticket): JsonResponse
+    {
+        Gate::authorize('view', $ticket);
+
+        try {
+            $job = new \App\Jobs\ClassifyTicketJob($ticket->id);
+            $job->handle();
+
+            $ticket->refresh();
+
+            return response()->json([
+                'success' => true,
+                'category' => $ticket->category->value,
+                'category_label' => TicketCategory::labels()[$ticket->category->value] ?? ucfirst($ticket->category->value),
+                'message' => "Ticket categorized as '{$ticket->category->value}' by Gemini AI.",
+            ]);
+        } catch (\Throwable $e) {
+            logger()->error('AI Classification Exception: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to run Gemini AI Classification: ' . $e->getMessage(),
             ], 500);
         }
     }

@@ -14,7 +14,7 @@ class TicketPaginationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_tickets_are_paginated_with_10_items_per_page(): void
+    public function test_tickets_are_paginated_with_6_items_per_page(): void
     {
         $user = User::factory()->create();
 
@@ -31,10 +31,8 @@ class TicketPaginationTest extends TestCase
 
         $tickets = $response->viewData('tickets');
 
-        $this->assertEquals(10, $tickets->perPage());
-        $this->assertEquals(15, $tickets->total());
-        $this->assertEquals(2, $tickets->lastPage());
-        $this->assertCount(10, $tickets->items());
+        $this->assertEquals(6, $tickets->perPage());
+        $this->assertCount(6, $tickets->items());
     }
 
     public function test_pagination_preserves_sorting_and_filtering_query_parameters(): void

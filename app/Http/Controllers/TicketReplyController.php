@@ -137,4 +137,123 @@ Requirements:
             ], 500);
         }
     }
+
+    /**
+     * Generate an instant intelligent reply using Google Gemini AI and Knowledge Base.
+     */
+    public function generateAiReply(Request $request, Ticket $ticket): JsonResponse
+    {
+        Gate::authorize('view', $ticket);
+
+        try {
+            $apiKey = config('services.gemini.key') ?: env('GEMINI_API_KEY') ?: env('GOOGLE_AI_API_KEY');
+            $model = config('services.gemini.model') ?: env('GEMINI_MODEL', 'gemini-2.0-flash');
+
+            if (empty($apiKey)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Google AI API Key is missing. Please check your .env configuration.',
+                ], 500);
+            }
+
+            $ticket->load(['creator', 'replies.user']);
+
+            $kbContent = '';
+            $kbPath = storage_path('app/knowledge-base.md');
+            if (\Illuminate\Support\Facades\File::exists($kbPath)) {
+                $kbContent = \Illuminate\Support\Facades\File::get($kbPath);
+            }
+
+            $customerName = $ticket->creator->name ?? 'Customer';
+            $firstName = trim(explode(' ', $customerName)[0]) ?: 'Customer';
+
+            $formattedReplies = $ticket->replies->map(function ($r, $index) {
+                $sender = $r->senderType ?? 'user';
+                $name = $r->user->name ?? 'User';
+                return "Reply #" . ($index + 1) . " ({$sender} - {$name}): {$r->body}";
+            })->implode("\n");
+
+            $systemPrompt = "You are Google Gemini AI, an intelligent customer support agent.
+Generate a helpful, empathetic, clear, and professional response to the customer ticket below.
+If Knowledge Base context is provided, prioritize relevant facts, instructions, and policies from it.
+
+KNOWLEDGE BASE:
+---
+{$kbContent}
+---
+
+TICKET DETAILS:
+Customer Name: {$customerName}
+Subject: {$ticket->subject}
+Description: {$ticket->description}
+
+PREVIOUS REPLIES:
+" . ($formattedReplies ?: 'No previous replies.') . "
+
+Requirements:
+- Address the customer warmly as 'Hi {$firstName},'.
+- Provide clear, actionable solution steps.
+- Maintain a polite, professional, helpful support tone.
+- Return ONLY the exact response text to send to the customer, with no markdown code blocks or meta commentary.";
+
+            $candidateModels = array_unique([
+                $model,
+                'gemini-3.5-flash',
+                'gemini-2.0-flash',
+                'gemini-2.5-flash',
+                'gemini-2.0-flash-lite',
+                'gemini-1.5-flash',
+            ]);
+
+            $generatedReply = null;
+            $lastErrorMessage = null;
+
+            foreach ($candidateModels as $m) {
+                $response = Http::timeout(35)->post("https://generativelanguage.googleapis.com/v1beta/models/{$m}:generateContent?key={$apiKey}", [
+                    'contents' => [
+                        [
+                            'role' => 'user',
+                            'parts' => [
+                                ['text' => $systemPrompt]
+                            ]
+                        ]
+                    ]
+                ]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                    if (!empty($text)) {
+                        $generatedReply = trim($text);
+                        break;
+                    }
+                } else {
+                    $data = $response->json();
+                    $lastErrorMessage = $data['error']['message'] ?? $response->body();
+                }
+            }
+
+            if (empty($generatedReply)) {
+                logger()->error('AI Reply Generation failed', ['error' => $lastErrorMessage]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unable to generate instant AI reply at this time. ' . ($lastErrorMessage ?? ''),
+                ], 500);
+            }
+
+            return response()->json([
+                'success' => true,
+                'ai_reply' => $generatedReply,
+            ]);
+
+        } catch (\Throwable $e) {
+            logger()->error('AI Reply Generation Exception: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while generating the AI reply: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

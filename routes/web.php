@@ -21,7 +21,10 @@ Route::patch('/tickets/{ticket}', [TicketController::class, 'update'])->middlewa
 Route::patch('/tickets/{ticket}/assign', [TicketController::class, 'assign'])->middleware(['auth'])->name('tickets.assign');
 Route::post('/tickets/{ticket}/replies', [TicketReplyController::class, 'store'])->middleware(['auth'])->name('tickets.replies.store');
 Route::post('/tickets/polish-reply', [TicketReplyController::class, 'polish'])->middleware(['auth'])->name('tickets.replies.polish');
+Route::post('/tickets/{ticket}/generate-ai-reply', [TicketReplyController::class, 'generateAiReply'])->middleware(['auth'])->name('tickets.replies.generate');
 Route::post('/tickets/{ticket}/summarize', [TicketController::class, 'summarize'])->middleware(['auth'])->name('tickets.summarize');
+Route::post('/tickets/{ticket}/auto-resolve', [TicketController::class, 'autoResolve'])->middleware(['auth'])->name('tickets.auto-resolve');
+Route::post('/tickets/{ticket}/classify', [TicketController::class, 'classify'])->middleware(['auth'])->name('tickets.classify');
 
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::resource('users', UserController::class)->except(['show']);

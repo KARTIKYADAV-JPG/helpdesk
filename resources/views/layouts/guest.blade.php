@@ -1,11 +1,20 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>{{ config('app.name', 'HelpDesk') }}</title>
+
+        <!-- Theme Initialization Script (Prevents FOUC) -->
+        <script>
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        </script>
 
         <!-- Inter Font -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,7 +24,7 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased">
+    <body class="font-sans antialiased bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
 
         <div class="min-h-screen flex">
 
@@ -51,21 +60,21 @@
                         Support that<br>actually works.
                     </h1>
                     <p class="text-indigo-200 text-base leading-relaxed max-w-sm">
-                        Manage tickets, track resolution times, and let AI handle the routine — all from one beautiful dashboard.
+                        Manage tickets, track resolution times, and let Google Gemini AI handle the routine — all from one beautiful dashboard.
                     </p>
 
                     {{-- Stats row --}}
                     <div class="mt-10 grid grid-cols-3 gap-6">
                         <div class="bg-white/10 rounded-2xl p-4 backdrop-blur-sm ring-1 ring-white/20">
-                            <div class="text-2xl font-black text-white">AI</div>
-                            <div class="text-indigo-200 text-xs font-medium mt-1">Powered</div>
+                            <div class="text-2xl font-black text-white">Gemini</div>
+                            <div class="text-indigo-200 text-xs font-medium mt-1">AI Powered</div>
                         </div>
                         <div class="bg-white/10 rounded-2xl p-4 backdrop-blur-sm ring-1 ring-white/20">
                             <div class="text-2xl font-black text-white">24/7</div>
                             <div class="text-indigo-200 text-xs font-medium mt-1">Coverage</div>
                         </div>
                         <div class="bg-white/10 rounded-2xl p-4 backdrop-blur-sm ring-1 ring-white/20">
-                            <div class="text-2xl font-black text-white">Fast</div>
+                            <div class="text-2xl font-black text-white">Auto</div>
                             <div class="text-indigo-200 text-xs font-medium mt-1">Resolution</div>
                         </div>
                     </div>
@@ -78,7 +87,7 @@
             </div>
 
             {{-- ── Right form panel ───────────────────────────────────── --}}
-            <div class="flex flex-1 flex-col justify-center items-center bg-white px-6 py-12 sm:px-10 lg:px-16">
+            <div class="flex flex-1 flex-col justify-center items-center bg-white dark:bg-slate-900 px-6 py-12 sm:px-10 lg:px-16 transition-colors duration-200">
 
                 {{-- Mobile logo (only shown on small screens) --}}
                 <div class="lg:hidden flex items-center gap-3 mb-10">
@@ -89,7 +98,7 @@
                         </svg>
                     </div>
                     <div>
-                        <p class="text-lg font-black text-slate-800">Help<span class="text-indigo-600">Desk</span></p>
+                        <p class="text-lg font-black text-slate-800 dark:text-slate-100">Help<span class="text-indigo-600">Desk</span></p>
                     </div>
                 </div>
 

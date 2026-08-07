@@ -35,14 +35,24 @@
     .scrollbar-thin::-webkit-scrollbar-track {
         background: #f1f5f9;
     }
+    .dark .scrollbar-thin::-webkit-scrollbar-track {
+        background: #0f172a;
+    }
     .scrollbar-thin::-webkit-scrollbar-thumb {
         background: #cbd5e1;
+        border-radius: 2px;
+    }
+    .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: #334155;
         border-radius: 2px;
     }
 
     /* Animated gradient for sidebar */
     .sidebar-gradient {
         background: linear-gradient(160deg, #4f46e5 0%, #6d28d9 60%, #7c3aed 100%);
+    }
+    .dark .sidebar-gradient {
+        background: linear-gradient(160deg, #312e81 0%, #4c1d95 60%, #581c87 100%);
     }
 
     /* Card hover lift */
@@ -52,5 +62,8 @@
     .card-hover:hover {
         transform: translateY(-2px);
         box-shadow: 0 10px 40px -10px rgba(79, 70, 229, 0.2);
+    }
+    .dark .card-hover:hover {
+        box-shadow: 0 10px 40px -10px rgba(124, 58, 237, 0.3);
     }
 }
