@@ -4,7 +4,7 @@
 --}}
 <aside
     :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-    class="fixed lg:relative inset-y-0 left-0 z-30 flex w-64 flex-shrink-0 flex-col sidebar-gradient shadow-xl shadow-indigo-900/30 transition-transform duration-300 ease-in-out"
+    class="fixed lg:relative inset-y-0 left-0 z-30 flex w-64 h-full flex-shrink-0 flex-col sidebar-gradient shadow-xl shadow-indigo-900/30 transition-transform duration-300 ease-in-out"
 >
     {{-- ── Logo ─────────────────────────────────────────────────── --}}
     <div class="flex items-center gap-3 px-5 py-5 border-b border-white/10 flex-shrink-0">

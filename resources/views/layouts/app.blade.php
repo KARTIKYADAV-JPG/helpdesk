@@ -24,9 +24,9 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+    <body class="h-full overflow-hidden font-sans antialiased bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
 
-        <div class="flex h-screen overflow-hidden" x-data="{ sidebarOpen: false, isDarkMode: document.documentElement.classList.contains('dark') }">
+        <div class="flex h-full w-full overflow-hidden" x-data="{ sidebarOpen: false, isDarkMode: document.documentElement.classList.contains('dark') }">
 
             {{-- Mobile sidebar backdrop --}}
             <div
@@ -46,7 +46,7 @@
             @include('layouts.navigation')
 
             {{-- Main area --}}
-            <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <div class="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
 
                 {{-- Top header bar --}}
                 <header class="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 flex-shrink-0 z-10 transition-colors duration-200">
@@ -103,7 +103,7 @@
                 </header>
 
                 {{-- Page content --}}
-                <main class="flex-1 overflow-y-auto scrollbar-thin">
+                <main class="flex-1 overflow-y-auto min-h-0 scrollbar-thin">
                     {{ $slot }}
                 </main>
 

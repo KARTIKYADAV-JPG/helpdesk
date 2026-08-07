@@ -84,7 +84,7 @@
             @endif
 
             <!-- Two Column Layout -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
                 <!-- Left Column (2/3 width) -->
                 <div class="lg:col-span-2 space-y-4">
