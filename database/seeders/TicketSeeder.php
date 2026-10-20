@@ -215,25 +215,70 @@ class TicketSeeder extends Seeder
         $categories = TicketCategory::values();
         $aiAgent = User::where('email', 'ai@helpdesk.com')->first();
 
-        // 3. Generate 100 tickets
-        for ($i = 0; $i < 100; $i++) {
+        // 3. Generate tickets for the last 30 days (ensuring rich data for every single day)
+        for ($daysAgo = 29; $daysAgo >= 0; $daysAgo--) {
+            $date = \Illuminate\Support\Carbon::now()->subDays($daysAgo);
+            $dailyCount = rand(3, 8); // 3 to 8 tickets per day
+
+            for ($k = 0; $k < $dailyCount; $k++) {
+                $createdAt = (clone $date)->setTime(rand(8, 22), rand(0, 59), rand(0, 59));
+                $category = fake()->randomElement($categories);
+                $categoryTemplates = $templates[$category] ?? $templates[TicketCategory::TECHNICAL_SUPPORT->value];
+                $template = fake()->randomElement($categoryTemplates);
+                $status = fake()->randomElement($statuses);
+
+                $resolvedAt = null;
+                if ($status === 'resolved' || $status === 'closed') {
+                    $resolvedAt = (clone $createdAt)->addMinutes(rand(15, 1440));
+                }
+
+                $assignedTo = null;
+                $summary = null;
+                if (fake()->boolean(80)) {
+                    if ($aiAgent && ($status === 'resolved' || $status === 'closed') && fake()->boolean(45)) {
+                        $assignedTo = $aiAgent->id;
+                        $summary = 'AI Agent automatically resolved the ticket using knowledge base reference and verified diagnostic logs.';
+                    } else {
+                        $assignedTo = $agents->random()->id;
+                    }
+                }
+
+                Ticket::create([
+                    'subject' => $template['subject'] . ' (' . fake()->numerify('Ref-####') . ')',
+                    'description' => $template['description'] . "\n\nAdditional details provided by client telemetry.",
+                    'category' => $category,
+                    'status' => $status,
+                    'priority' => fake()->randomElement($priorities),
+                    'created_by' => $allUsers->random()->id,
+                    'assigned_to' => $assignedTo,
+                    'summary' => $summary,
+                    'resolved_at' => $resolvedAt,
+                    'created_at' => $createdAt,
+                    'updated_at' => $resolvedAt ?? $createdAt,
+                ]);
+            }
+        }
+
+        // 4. Generate historical tickets (31 to 180 days ago) for overall statistics
+        for ($i = 0; $i < 60; $i++) {
+            $daysAgo = rand(31, 180);
+            $createdAt = \Illuminate\Support\Carbon::now()->subDays($daysAgo)->setTime(rand(8, 22), rand(0, 59));
             $category = fake()->randomElement($categories);
             $categoryTemplates = $templates[$category] ?? $templates[TicketCategory::TECHNICAL_SUPPORT->value];
             $template = fake()->randomElement($categoryTemplates);
-            $status = fake()->randomElement($statuses);
-            $createdAt = fake()->dateTimeBetween('-6 months', '-1 day');
+            $status = fake()->randomElement(['resolved', 'closed', 'processing', 'open']);
 
-            // Set resolved_at timestamp if ticket status is resolved or closed
             $resolvedAt = null;
             if ($status === 'resolved' || $status === 'closed') {
-                $resolvedAt = (clone $createdAt)->modify('+' . rand(15, 2880) . ' minutes');
+                $resolvedAt = (clone $createdAt)->addMinutes(rand(15, 2880));
             }
 
-            // Assign tickets to human agents or AI Agent
             $assignedTo = null;
+            $summary = null;
             if (fake()->boolean(80)) {
                 if ($aiAgent && ($status === 'resolved' || $status === 'closed') && fake()->boolean(40)) {
                     $assignedTo = $aiAgent->id;
+                    $summary = 'AI Agent resolved issue automatically.';
                 } else {
                     $assignedTo = $agents->random()->id;
                 }
@@ -241,14 +286,16 @@ class TicketSeeder extends Seeder
 
             Ticket::create([
                 'subject' => $template['subject'] . ' (' . fake()->numerify('Ref-####') . ')',
-                'description' => $template['description'] . "\n\nAdditional comments generated automatically by user environment.",
+                'description' => $template['description'],
                 'category' => $category,
                 'status' => $status,
                 'priority' => fake()->randomElement($priorities),
                 'created_by' => $allUsers->random()->id,
                 'assigned_to' => $assignedTo,
+                'summary' => $summary,
                 'resolved_at' => $resolvedAt,
                 'created_at' => $createdAt,
+                'updated_at' => $resolvedAt ?? $createdAt,
             ]);
         }
     }
